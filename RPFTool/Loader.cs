@@ -68,7 +68,8 @@ namespace RPFTool
                                 }
                                 catch (System.Exception ex)
                                 {
-                                    MessageBox.Show("Failed to download the latest version:" + ex.Message + Environment.NewLine + updateURL.Value.ToString(), "Error!", MessageBoxButtons.OK);
+                                // VS edit
+                                //    MessageBox.Show("Failed to download the latest version:" + ex.Message + Environment.NewLine + updateURL.Value.ToString(), "Error!", MessageBoxButtons.OK);
                                 }
                             }
                         });
@@ -76,7 +77,8 @@ namespace RPFTool
                 }
                 catch (System.Exception ex)
                 {
-                    MessageBox.Show("Failed to download the latest version:" + ex.Message, "Error!", MessageBoxButtons.OK);
+                    // VS edit
+                    //MessageBox.Show("Failed to download the latest version:" + ex.Message, "Error!", MessageBoxButtons.OK);
                 }
                 this.Invoke((MethodInvoker)delegate
                 {

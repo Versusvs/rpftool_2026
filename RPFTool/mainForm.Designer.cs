@@ -28,19 +28,19 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(mainForm));
             this.filelistview = new BrightIdeasSoftware.ObjectListView();
             this.columnName = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.columnAttributes = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.columnSize = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.popupMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.popupMenu = new System.Windows.Forms.ContextMenuStrip();
             this.btn_extract = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_replace = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_goto = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_delete = new System.Windows.Forms.ToolStripMenuItem();
+            this.btn_add = new System.Windows.Forms.ToolStripMenuItem();
             this.hotItemStyle1 = new BrightIdeasSoftware.HotItemStyle();
-            this.barManager = new DevExpress.XtraBars.BarManager(this.components);
+            this.barManager = new DevExpress.XtraBars.BarManager();
             this.bar2 = new DevExpress.XtraBars.Bar();
             this.mFile = new DevExpress.XtraBars.BarSubItem();
             this.iOpen = new DevExpress.XtraBars.BarButtonItem();
@@ -51,6 +51,7 @@
             this.iExtractAll = new DevExpress.XtraBars.BarButtonItem();
             this.btn_exportFileList = new DevExpress.XtraBars.BarButtonItem();
             this.btn_UnpackRSC = new DevExpress.XtraBars.BarButtonItem();
+            this.verifyArchiveToolStripMenuItem = new DevExpress.XtraBars.BarButtonItem();
             this.mHelp = new DevExpress.XtraBars.BarSubItem();
             this.iAbout = new DevExpress.XtraBars.BarButtonItem();
             this.barStaticItem1 = new DevExpress.XtraBars.BarStaticItem();
@@ -83,10 +84,10 @@
             this.mainStatusbar = new DevExpress.XtraBars.Bar();
             this.repositoryItemCheckEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
             this.barDockControl15 = new DevExpress.XtraBars.BarDockControl();
+            this.barManager2 = new DevExpress.XtraBars.BarManager();
             this.barDockControl16 = new DevExpress.XtraBars.BarDockControl();
             this.barDockControl17 = new DevExpress.XtraBars.BarDockControl();
             this.barDockControl18 = new DevExpress.XtraBars.BarDockControl();
-            this.barManager2 = new DevExpress.XtraBars.BarManager(this.components);
             this.bar4 = new DevExpress.XtraBars.Bar();
             this.barRenderer1 = new BrightIdeasSoftware.BarRenderer();
             this.barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
@@ -114,6 +115,7 @@
             this.filelistview.Dock = System.Windows.Forms.DockStyle.Fill;
             this.filelistview.FullRowSelect = true;
             this.filelistview.HeaderUsesThemes = false;
+            this.filelistview.HideSelection = false;
             this.filelistview.HighlightBackgroundColor = System.Drawing.Color.Black;
             this.filelistview.HighlightForegroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(234)))), ((int)(((byte)(234)))));
             this.filelistview.HotItemStyle = this.hotItemStyle1;
@@ -156,9 +158,10 @@
             this.btn_extract,
             this.btn_replace,
             this.btn_goto,
-            this.btn_delete});
+            this.btn_delete,
+            this.btn_add});
             this.popupMenu.Name = "popupMenu";
-            this.popupMenu.Size = new System.Drawing.Size(153, 92);
+            this.popupMenu.Size = new System.Drawing.Size(153, 114);
             this.popupMenu.Opening += new System.ComponentModel.CancelEventHandler(this.popupMenu_Opening);
             // 
             // btn_extract
@@ -186,8 +189,15 @@
             // 
             this.btn_delete.Name = "btn_delete";
             this.btn_delete.Size = new System.Drawing.Size(152, 22);
-            this.btn_delete.Text = "Delete";
+            this.btn_delete.Text = "Delete file";
             this.btn_delete.Click += new System.EventHandler(this.btn_delete_Click);
+            // 
+            // btn_add
+            // 
+            this.btn_add.Name = "btn_add";
+            this.btn_add.Size = new System.Drawing.Size(152, 22);
+            this.btn_add.Text = "Add file";
+            this.btn_add.Click += new System.EventHandler(this.btn_add_Click);
             // 
             // barManager
             // 
@@ -219,9 +229,10 @@
             this.tb_search,
             this.barStaticItem1,
             this.btn_exportFileList,
-            this.btn_UnpackRSC});
+            this.btn_UnpackRSC,
+            this.verifyArchiveToolStripMenuItem});
             this.barManager.MainMenu = this.bar2;
-            this.barManager.MaxItemId = 37;
+            this.barManager.MaxItemId = 38;
             this.barManager.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
             this.tb_searchEdit});
             // 
@@ -237,7 +248,7 @@
             new DevExpress.XtraBars.LinkPersistInfo(this.barSubItem2),
             new DevExpress.XtraBars.LinkPersistInfo(this.mHelp),
             new DevExpress.XtraBars.LinkPersistInfo(this.barStaticItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.tb_search)});
+            new DevExpress.XtraBars.LinkPersistInfo(DevExpress.XtraBars.BarLinkUserDefines.Width, this.tb_search, "", false, true, true, 152)});
             this.bar2.OptionsBar.AllowQuickCustomization = false;
             this.bar2.OptionsBar.MultiLine = true;
             this.bar2.OptionsBar.UseWholeRow = true;
@@ -289,7 +300,8 @@
             this.barSubItem2.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
             new DevExpress.XtraBars.LinkPersistInfo(this.iExtractAll),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_exportFileList),
-            new DevExpress.XtraBars.LinkPersistInfo(this.btn_UnpackRSC)});
+            new DevExpress.XtraBars.LinkPersistInfo(this.btn_UnpackRSC),
+            new DevExpress.XtraBars.LinkPersistInfo(this.verifyArchiveToolStripMenuItem)});
             this.barSubItem2.Name = "barSubItem2";
             // 
             // iExtractAll
@@ -314,6 +326,14 @@
             this.btn_UnpackRSC.Name = "btn_UnpackRSC";
             this.btn_UnpackRSC.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_UnpackRSC_ItemClick);
             // 
+            // verifyArchiveToolStripMenuItem
+            // 
+            this.verifyArchiveToolStripMenuItem.Caption = "Verify";
+            this.verifyArchiveToolStripMenuItem.Enabled = false;
+            this.verifyArchiveToolStripMenuItem.Id = 37;
+            this.verifyArchiveToolStripMenuItem.Name = "verifyArchiveToolStripMenuItem";
+            this.verifyArchiveToolStripMenuItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.verifyArchiveToolStripMenuItem_ItemClick);
+            // 
             // mHelp
             // 
             this.mHelp.Caption = "&Help";
@@ -335,15 +355,14 @@
             this.barStaticItem1.Caption = "Search";
             this.barStaticItem1.Id = 22;
             this.barStaticItem1.Name = "barStaticItem1";
-            this.barStaticItem1.TextAlignment = System.Drawing.StringAlignment.Near;
             // 
             // tb_search
             // 
             this.tb_search.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             this.tb_search.Edit = this.tb_searchEdit;
+            this.tb_search.EditWidth = 171;
             this.tb_search.Id = 21;
             this.tb_search.Name = "tb_search";
-            this.tb_search.Width = 171;
             // 
             // tb_searchEdit
             // 
@@ -356,6 +375,7 @@
             this.barDockControlTop.CausesValidation = false;
             this.barDockControlTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.barDockControlTop.Location = new System.Drawing.Point(0, 0);
+            this.barDockControlTop.Manager = this.barManager;
             this.barDockControlTop.Size = new System.Drawing.Size(867, 22);
             // 
             // barDockControlBottom
@@ -363,6 +383,7 @@
             this.barDockControlBottom.CausesValidation = false;
             this.barDockControlBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.barDockControlBottom.Location = new System.Drawing.Point(0, 567);
+            this.barDockControlBottom.Manager = this.barManager;
             this.barDockControlBottom.Size = new System.Drawing.Size(867, 0);
             // 
             // barDockControlLeft
@@ -370,6 +391,7 @@
             this.barDockControlLeft.CausesValidation = false;
             this.barDockControlLeft.Dock = System.Windows.Forms.DockStyle.Left;
             this.barDockControlLeft.Location = new System.Drawing.Point(0, 22);
+            this.barDockControlLeft.Manager = this.barManager;
             this.barDockControlLeft.Size = new System.Drawing.Size(0, 545);
             // 
             // barDockControlRight
@@ -377,6 +399,7 @@
             this.barDockControlRight.CausesValidation = false;
             this.barDockControlRight.Dock = System.Windows.Forms.DockStyle.Right;
             this.barDockControlRight.Location = new System.Drawing.Point(867, 22);
+            this.barDockControlRight.Manager = this.barManager;
             this.barDockControlRight.Size = new System.Drawing.Size(0, 545);
             // 
             // barButtonItem2
@@ -429,6 +452,7 @@
             this.barDockControl5.CausesValidation = false;
             this.barDockControl5.Dock = System.Windows.Forms.DockStyle.Right;
             this.barDockControl5.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl5.Manager = null;
             this.barDockControl5.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl4
@@ -436,6 +460,7 @@
             this.barDockControl4.CausesValidation = false;
             this.barDockControl4.Dock = System.Windows.Forms.DockStyle.Left;
             this.barDockControl4.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl4.Manager = null;
             this.barDockControl4.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl6
@@ -443,6 +468,7 @@
             this.barDockControl6.CausesValidation = false;
             this.barDockControl6.Dock = System.Windows.Forms.DockStyle.Right;
             this.barDockControl6.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl6.Manager = null;
             this.barDockControl6.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl3
@@ -450,6 +476,7 @@
             this.barDockControl3.CausesValidation = false;
             this.barDockControl3.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.barDockControl3.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl3.Manager = null;
             this.barDockControl3.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl7
@@ -457,6 +484,7 @@
             this.barDockControl7.CausesValidation = false;
             this.barDockControl7.Dock = System.Windows.Forms.DockStyle.Left;
             this.barDockControl7.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl7.Manager = null;
             this.barDockControl7.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl8
@@ -464,6 +492,7 @@
             this.barDockControl8.CausesValidation = false;
             this.barDockControl8.Dock = System.Windows.Forms.DockStyle.Right;
             this.barDockControl8.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl8.Manager = null;
             this.barDockControl8.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl2
@@ -471,6 +500,7 @@
             this.barDockControl2.CausesValidation = false;
             this.barDockControl2.Dock = System.Windows.Forms.DockStyle.Top;
             this.barDockControl2.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl2.Manager = null;
             this.barDockControl2.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl9
@@ -478,6 +508,7 @@
             this.barDockControl9.CausesValidation = false;
             this.barDockControl9.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.barDockControl9.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl9.Manager = null;
             this.barDockControl9.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl10
@@ -485,6 +516,7 @@
             this.barDockControl10.CausesValidation = false;
             this.barDockControl10.Dock = System.Windows.Forms.DockStyle.Left;
             this.barDockControl10.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl10.Manager = null;
             this.barDockControl10.Size = new System.Drawing.Size(0, 0);
             // 
             // barDockControl11
@@ -492,6 +524,7 @@
             this.barDockControl11.CausesValidation = false;
             this.barDockControl11.Dock = System.Windows.Forms.DockStyle.Right;
             this.barDockControl11.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl11.Manager = null;
             this.barDockControl11.Size = new System.Drawing.Size(0, 0);
             // 
             // bar1
@@ -538,28 +571,8 @@
             this.barDockControl15.CausesValidation = false;
             this.barDockControl15.Dock = System.Windows.Forms.DockStyle.Top;
             this.barDockControl15.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl15.Manager = this.barManager2;
             this.barDockControl15.Size = new System.Drawing.Size(867, 0);
-            // 
-            // barDockControl16
-            // 
-            this.barDockControl16.CausesValidation = false;
-            this.barDockControl16.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.barDockControl16.Location = new System.Drawing.Point(0, 567);
-            this.barDockControl16.Size = new System.Drawing.Size(867, 23);
-            // 
-            // barDockControl17
-            // 
-            this.barDockControl17.CausesValidation = false;
-            this.barDockControl17.Dock = System.Windows.Forms.DockStyle.Left;
-            this.barDockControl17.Location = new System.Drawing.Point(0, 0);
-            this.barDockControl17.Size = new System.Drawing.Size(0, 567);
-            // 
-            // barDockControl18
-            // 
-            this.barDockControl18.CausesValidation = false;
-            this.barDockControl18.Dock = System.Windows.Forms.DockStyle.Right;
-            this.barDockControl18.Location = new System.Drawing.Point(867, 0);
-            this.barDockControl18.Size = new System.Drawing.Size(0, 567);
             // 
             // barManager2
             // 
@@ -574,6 +587,30 @@
             this.barManager2.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
             this.repositoryItemCheckEdit1});
             this.barManager2.StatusBar = this.mainStatusbar;
+            // 
+            // barDockControl16
+            // 
+            this.barDockControl16.CausesValidation = false;
+            this.barDockControl16.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.barDockControl16.Location = new System.Drawing.Point(0, 567);
+            this.barDockControl16.Manager = this.barManager2;
+            this.barDockControl16.Size = new System.Drawing.Size(867, 23);
+            // 
+            // barDockControl17
+            // 
+            this.barDockControl17.CausesValidation = false;
+            this.barDockControl17.Dock = System.Windows.Forms.DockStyle.Left;
+            this.barDockControl17.Location = new System.Drawing.Point(0, 0);
+            this.barDockControl17.Manager = this.barManager2;
+            this.barDockControl17.Size = new System.Drawing.Size(0, 567);
+            // 
+            // barDockControl18
+            // 
+            this.barDockControl18.CausesValidation = false;
+            this.barDockControl18.Dock = System.Windows.Forms.DockStyle.Right;
+            this.barDockControl18.Location = new System.Drawing.Point(867, 0);
+            this.barDockControl18.Manager = this.barManager2;
+            this.barDockControl18.Size = new System.Drawing.Size(0, 567);
             // 
             // bar4
             // 
@@ -612,7 +649,7 @@
             this.LookAndFeel.UseDefaultLookAndFeel = false;
             this.Name = "mainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "RPF Tool";
+            this.Text = "RPF Tool (vas.1987)";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.mainForm_FormClosing);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.mainForm_KeyUp);
             ((System.ComponentModel.ISupportInitialize)(this.filelistview)).EndInit();
@@ -622,6 +659,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCheckEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.barManager2)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -687,6 +725,8 @@
         private System.Windows.Forms.ToolStripMenuItem btn_delete;
         private DevExpress.XtraBars.BarButtonItem btn_exportFileList;
         private DevExpress.XtraBars.BarButtonItem btn_UnpackRSC;
+        private System.Windows.Forms.ToolStripMenuItem btn_add;
+        private DevExpress.XtraBars.BarButtonItem verifyArchiveToolStripMenuItem;
 
     }
 }

@@ -35,6 +35,8 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.WebLink = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -53,7 +55,7 @@
             this.label2.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.Location = new System.Drawing.Point(143, 43);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(173, 21);
+            this.label2.Size = new System.Drawing.Size(172, 21);
             this.label2.TabIndex = 20;
             this.label2.Text = "Created by Twisted89";
             // 
@@ -63,7 +65,7 @@
             this.label1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(186, 22);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(83, 21);
+            this.label1.Size = new System.Drawing.Size(82, 21);
             this.label1.TabIndex = 19;
             this.label1.Text = "RPF TOOL";
             // 
@@ -79,7 +81,7 @@
             // WebLink
             // 
             this.WebLink.AutoSize = true;
-            this.WebLink.Location = new System.Drawing.Point(177, 83);
+            this.WebLink.Location = new System.Drawing.Point(176, 108);
             this.WebLink.Name = "WebLink";
             this.WebLink.Size = new System.Drawing.Size(103, 13);
             this.WebLink.TabIndex = 22;
@@ -96,11 +98,33 @@
             this.label4.TabIndex = 23;
             this.label4.Text = "V1.3";
             // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label5.Location = new System.Drawing.Point(155, 68);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(140, 21);
+            this.label5.TabIndex = 24;
+            this.label5.Text = "edited by vas.1987";
+            this.label5.Click += new System.EventHandler(this.label5_Click);
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(279, 139);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(81, 13);
+            this.label6.TabIndex = 25;
+            this.label6.Text = "Copyright 2026";
+            // 
             // aboutform
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(372, 177);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.WebLink);
             this.Controls.Add(this.label3);
@@ -110,9 +134,9 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(388, 215);
+            this.MaximumSize = new System.Drawing.Size(388, 216);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(388, 215);
+            this.MinimumSize = new System.Drawing.Size(388, 216);
             this.Name = "aboutform";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "About";
@@ -130,6 +154,8 @@
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.LinkLabel WebLink;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label6;
 
 
     }
