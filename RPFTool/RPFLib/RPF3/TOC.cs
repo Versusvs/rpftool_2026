@@ -12,6 +12,11 @@ namespace RPFLib.RPF3
         private List<TOCEntry> _entries = new List<TOCEntry>();
         private string _nameStringTable = "";
 
+        // ДОБАВЛЕНО: plaintext-байты хвоста региона TOC (после записей), захваченные
+        // при расшифровке в Open. Нужны, чтобы при каждом сохранении перезаписывать
+        // ВЕСЬ регион дословно, а не оставлять хвост от шаблона
+        private byte[] _padPlain = null;
+
         public File File { get; private set; }
 
         public TOC(File file)
@@ -31,9 +36,8 @@ namespace RPFLib.RPF3
 
         // Размер TOC на диске, измеренное правило билдера MC:LA:
         // зашифрованный TOC занимает ВСЮ область от 0x800 до старта данных,
-        // округлённую до страницы 0x1000; plaintext = записи + нули до конца региона.
+        // округлённую до страницы 0x1000.
         //   TOCSize = Align(0x800 + EntryCount*16, 0x1000) - 0x800
-        // Для 792 и 793 записей это даёт 0x3800 (слово 0x0038 в заголовке бэкапа).
         public int GetStoredSize()
         {
             int entries = _entries.Count * 16;
@@ -113,11 +117,12 @@ namespace RPFLib.RPF3
 
         public void Read(BinaryReader br)
         {
+            byte[] tocData = null;
+
             if (File.Header.Encrypted)
             {
                 int tocSize = File.Header.TOCSize;
-                byte[] tocData = br.ReadBytes(tocSize);
-
+                tocData = br.ReadBytes(tocSize);
                 tocData = DataUtil.Decrypt(tocData);
 
                 var ms = new MemoryStream(tocData);
@@ -140,16 +145,19 @@ namespace RPFLib.RPF3
                 _entries.Add(entry);
             }
 
-            // Остаток региона (нулевой паддинг plaintext, после расшифровки - нули).
-            // В RPF3 не используется, но читается, чтобы размер сошёлся
+            // Остаток региона: plaintext-хвост после записей.
+            // Запоминаем его ДОСЛОВНО (нули или нет - не предполагаем),
+            // чтобы при сохранении перезаписать весь регион байт-в-байт
             int stringDataSize = File.Header.TOCSize - File.Header.EntryCount * 16;
             if (stringDataSize > 0)
             {
                 byte[] stringData = br.ReadBytes(stringDataSize);
+                _padPlain = stringData;
                 _nameStringTable = Encoding.ASCII.GetString(stringData);
             }
             else
             {
+                _padPlain = new byte[0];
                 _nameStringTable = "";
             }
         }
@@ -168,9 +176,10 @@ namespace RPFLib.RPF3
             return "";
         }
 
-        // Сериализация записей -> дополнение plaintext нулями до размера региона
-        // (GetStoredSize) -> шифрование всего региона -> запись.
-        // Тогда шифроблок побайтово равен бэкаповому, включая хвост с 0x3980.
+        // Сериализация: записи + дословный plaintext-хвост (из снимка Open),
+        // дополненный нулями до полного размера региона GetStoredSize(),
+        // затем шифрование ВСЕГО региона. Таким образом каждый save перезаписывает
+        // область [0x800, 0x800+TOCSize) целиком - хвост больше не наследуется от шаблона
         public void Write(BinaryWriter bw)
         {
             int target = GetStoredSize();
@@ -183,15 +192,34 @@ namespace RPFLib.RPF3
                 {
                     entry.Write(tempbw);
                 }
+
+                if (File.Header.Encrypted)
+                {
+                    // Дословный хвост из снимка; если записи съели часть - обрезаем,
+                    // если хвоста не хватает - дополняем нулями
+                    int entriesLen = (int)ms.Length;
+                    int padWant = target - entriesLen;
+                    if (padWant > 0)
+                    {
+                        byte[] pad = _padPlain ?? new byte[0];
+                        int take = Math.Min(pad.Length, padWant);
+                        if (take > 0)
+                        {
+                            tempbw.Write(pad, 0, take);
+                        }
+                        if (take < padWant)
+                        {
+                            tempbw.Write(new byte[padWant - take]);
+                        }
+                    }
+                }
+
                 tocBytes = ms.ToArray();
             }
 
             if (File.Header.Encrypted)
             {
-                // дополняем нулями до полного региона (или до блока AES, если вдруг больше)
-                int padded = tocBytes.Length;
-                if (padded < target) padded = target;
-                padded = (padded + 15) & ~15;
+                int padded = (tocBytes.Length + 15) & ~15;
                 if (padded != tocBytes.Length)
                 {
                     Array.Resize(ref tocBytes, padded);
