@@ -28,19 +28,20 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(mainForm));
             this.filelistview = new BrightIdeasSoftware.ObjectListView();
             this.columnName = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.columnAttributes = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.columnSize = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.popupMenu = new System.Windows.Forms.ContextMenuStrip();
+            this.popupMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.btn_extract = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_replace = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_goto = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_delete = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_add = new System.Windows.Forms.ToolStripMenuItem();
             this.hotItemStyle1 = new BrightIdeasSoftware.HotItemStyle();
-            this.barManager = new DevExpress.XtraBars.BarManager();
+            this.barManager = new DevExpress.XtraBars.BarManager(this.components);
             this.bar2 = new DevExpress.XtraBars.Bar();
             this.mFile = new DevExpress.XtraBars.BarSubItem();
             this.iOpen = new DevExpress.XtraBars.BarButtonItem();
@@ -52,6 +53,7 @@
             this.btn_exportFileList = new DevExpress.XtraBars.BarButtonItem();
             this.btn_UnpackRSC = new DevExpress.XtraBars.BarButtonItem();
             this.verifyArchiveToolStripMenuItem = new DevExpress.XtraBars.BarButtonItem();
+            this.btn_stats = new DevExpress.XtraBars.BarButtonItem();
             this.mHelp = new DevExpress.XtraBars.BarSubItem();
             this.iAbout = new DevExpress.XtraBars.BarButtonItem();
             this.barStaticItem1 = new DevExpress.XtraBars.BarStaticItem();
@@ -84,7 +86,7 @@
             this.mainStatusbar = new DevExpress.XtraBars.Bar();
             this.repositoryItemCheckEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
             this.barDockControl15 = new DevExpress.XtraBars.BarDockControl();
-            this.barManager2 = new DevExpress.XtraBars.BarManager();
+            this.barManager2 = new DevExpress.XtraBars.BarManager(this.components);
             this.barDockControl16 = new DevExpress.XtraBars.BarDockControl();
             this.barDockControl17 = new DevExpress.XtraBars.BarDockControl();
             this.barDockControl18 = new DevExpress.XtraBars.BarDockControl();
@@ -230,9 +232,10 @@
             this.barStaticItem1,
             this.btn_exportFileList,
             this.btn_UnpackRSC,
-            this.verifyArchiveToolStripMenuItem});
+            this.verifyArchiveToolStripMenuItem,
+            this.btn_stats});
             this.barManager.MainMenu = this.bar2;
-            this.barManager.MaxItemId = 38;
+            this.barManager.MaxItemId = 39;
             this.barManager.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
             this.tb_searchEdit});
             // 
@@ -301,7 +304,8 @@
             new DevExpress.XtraBars.LinkPersistInfo(this.iExtractAll),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_exportFileList),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_UnpackRSC),
-            new DevExpress.XtraBars.LinkPersistInfo(this.verifyArchiveToolStripMenuItem)});
+            new DevExpress.XtraBars.LinkPersistInfo(this.verifyArchiveToolStripMenuItem),
+            new DevExpress.XtraBars.LinkPersistInfo(this.btn_stats)});
             this.barSubItem2.Name = "barSubItem2";
             // 
             // iExtractAll
@@ -333,6 +337,13 @@
             this.verifyArchiveToolStripMenuItem.Id = 37;
             this.verifyArchiveToolStripMenuItem.Name = "verifyArchiveToolStripMenuItem";
             this.verifyArchiveToolStripMenuItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.verifyArchiveToolStripMenuItem_ItemClick);
+            // 
+            // btn_stats
+            // 
+            this.btn_stats.Caption = "Check archive integrity";
+            this.btn_stats.Id = 38;
+            this.btn_stats.Name = "btn_stats";
+            this.btn_stats.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_stats_ItemClick);
             // 
             // mHelp
             // 
@@ -727,6 +738,7 @@
         private DevExpress.XtraBars.BarButtonItem btn_UnpackRSC;
         private System.Windows.Forms.ToolStripMenuItem btn_add;
         private DevExpress.XtraBars.BarButtonItem verifyArchiveToolStripMenuItem;
+        private DevExpress.XtraBars.BarButtonItem btn_stats;
 
     }
 }

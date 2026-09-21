@@ -926,5 +926,91 @@ namespace RPFTool
                 }
             }
         }
+
+        private void btn_stats_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            // 1. Audit is only available for an open RPF3 archive
+            var v3 = archiveFile as Version3;
+            if (v3 == null)
+            {
+                MessageBox.Show("Audit is only available for an open RPF3 archive.",
+                    "Audit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                int errs, warns;
+                string report;
+
+                // 2. Run audit: long operation (reads and decompresses all blocks),
+                //    so use WaitCursor
+                using (Cursors.WaitCursor)
+                {
+                    report = v3.Audit(out errs, out warns);
+                }
+
+                // 3. Full report - to a file next to the exe
+                string outPath = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory, "rpf_audit.txt");
+                System.IO.File.WriteAllText(outPath, report);
+
+                // 4. Short summary in a dialog + offer to open the report
+                string summary = string.Format(
+                    "Audit finished: errors={0}, warnings={1}.",
+                    errs, warns);
+                if (errs == 0 && warns == 0)
+                {
+                    summary += Environment.NewLine + "No format rule violations found.";
+                }
+
+                var answer = MessageBox.Show(
+                    summary + Environment.NewLine + Environment.NewLine +
+                    "Full report: " + outPath + Environment.NewLine + Environment.NewLine +
+                    "Open the report?",
+                    errs == 0 ? "Audit: OK" : "Audit: ERRORS",
+                    MessageBoxButtons.YesNo,
+                    errs == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Error);
+
+                if (answer == DialogResult.Yes)
+                {
+                    System.Diagnostics.Process.Start("notepad.exe", outPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 5. Any audit failure - show in dialog, do not touch the archive
+                MessageBox.Show("Audit failed: " + ex.Message,
+                    "Audit", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        // Вытаскивает из отчёта главные строки для быстрого диалога
+        private static string ExtractSummaryLines(string report)
+        {
+            var markers = new[]
+         {
+             "  verdict:",
+             "  sameOffset=",
+             "  diffRanges=",
+             "  files are byte-identical"
+         };
+            var sb = new StringBuilder();
+            using (var sr = new StringReader(report))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    foreach (var m in markers)
+                    {
+                        if (line.StartsWith(m))
+                        {
+                            sb.AppendLine(line.Trim());
+                            break;
+                        }
+                    }
+                }
+            }
+            return sb.Length > 0 ? sb.ToString() : "(no summary lines in report)";
+        }
     }
 }

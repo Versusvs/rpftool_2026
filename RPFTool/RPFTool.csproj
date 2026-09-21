@@ -56,13 +56,58 @@
   <PropertyGroup>
     <ApplicationIcon>rpf.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|AnyCPU'">
+    <OutputPath>bin\x64\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|x64'">
+    <OutputPath>bin\x64\x64\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DevExpress.BonusSkins.v12.2, Version=12.2.7.0, Culture=neutral, PublicKeyToken=95fc6c5621878f0a, processorArchitecture=MSIL" />
-    <Reference Include="DevExpress.Data.v12.2, Version=12.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-    <Reference Include="DevExpress.Printing.v12.2.Core, Version=12.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-    <Reference Include="DevExpress.Utils.v12.2, Version=12.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-    <Reference Include="DevExpress.XtraBars.v12.2, Version=12.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-    <Reference Include="DevExpress.XtraEditors.v12.2, Version=12.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.BonusSkins.v17.2, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Data.v17.2, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Pdf.v17.2.Core, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Office.v17.2.Core, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.RichEdit.v17.2.Core, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.RichEdit.v17.2.Export, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Printing.v17.2.Core, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Utils.v17.2, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraBars.v17.2, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraEditors.v17.2, Version=17.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -79,7 +124,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="aboutform.cs" />
+    <Compile Include="aboutform.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="aboutform.Designer.cs">
       <DependentUpon>aboutform.cs</DependentUpon>
     </Compile>
@@ -186,25 +233,35 @@
     <Compile Include="Compression\zlib\ZStreamException.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DownloadForm.cs" />
+    <Compile Include="DownloadForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="DownloadForm.Designer.cs">
       <DependentUpon>DownloadForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Extracting.cs" />
+    <Compile Include="Extracting.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Extracting.Designer.cs">
       <DependentUpon>Extracting.cs</DependentUpon>
     </Compile>
-    <Compile Include="gameSelection.cs" />
+    <Compile Include="gameSelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="gameSelection.Designer.cs">
       <DependentUpon>gameSelection.cs</DependentUpon>
     </Compile>
     <Compile Include="iniReader.cs" />
     <Compile Include="keyHolder.cs" />
-    <Compile Include="mainForm.cs" />
+    <Compile Include="mainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="mainForm.Designer.cs">
       <DependentUpon>mainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Loader.cs" />
+    <Compile Include="Loader.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Loader.Designer.cs">
       <DependentUpon>Loader.cs</DependentUpon>
     </Compile>
@@ -358,27 +415,40 @@
     <Compile Include="RPFLib\RPF3\MagicId.cs" />
     <Compile Include="RPFLib\RPF3\TOC.cs" />
     <Compile Include="RPFLib\Version7.cs" />
-    <Compile Include="Saving.cs" />
+    <Compile Include="RpfStat.cs" />
+    <Compile Include="Saving.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Saving.Designer.cs">
       <DependentUpon>Saving.cs</DependentUpon>
     </Compile>
-    <Compile Include="Viewers\xscView.cs" />
+    <Compile Include="Viewers\xscView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Viewers\xscView.Designer.cs">
       <DependentUpon>xscView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Viewers\StringsView.cs" />
+    <Compile Include="Viewers\StringsView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Viewers\StringsView.Designer.cs">
       <DependentUpon>StringsView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Viewers\TextureView.cs" />
+    <Compile Include="Viewers\TextureView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Viewers\TextureView.Designer.cs">
       <DependentUpon>TextureView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Viewers\TextView.cs" />
+    <Compile Include="Viewers\TextView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Viewers\TextView.Designer.cs">
       <DependentUpon>TextView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Viewers\xscViewV7.cs" />
+    <Compile Include="Viewers\xscViewV7.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Viewers\xscViewV7.Designer.cs">
       <DependentUpon>xscViewV7.cs</DependentUpon>
     </Compile>
@@ -425,7 +495,7 @@
       <DependentUpon>xscViewV7.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Keys.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="ObjectListView\FullClassDiagram.cd" />
     <None Include="ObjectListView\olv-keyfile.snk" />
@@ -471,6 +541,10 @@
     <None Include="Resources\save.png" />
     <None Include="Resources\Save.jpg" />
     <None Include="images\gtav.png" />
+    <Content Include="RPFLib\FilenamesMCLA.txt">
+      <Link>FilenamesMCLA.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="xcompress32.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
