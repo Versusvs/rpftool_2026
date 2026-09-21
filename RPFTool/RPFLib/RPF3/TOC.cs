@@ -12,9 +12,9 @@ namespace RPFLib.RPF3
         private List<TOCEntry> _entries = new List<TOCEntry>();
         private string _nameStringTable = "";
 
-        // ДОБАВЛЕНО: plaintext-байты хвоста региона TOC (после записей), захваченные
-        // при расшифровке в Open. Нужны, чтобы при каждом сохранении перезаписывать
-        // ВЕСЬ регион дословно, а не оставлять хвост от шаблона
+        // Plaintext-хвост региона TOC (байты после записей), захваченный ДОСЛОВНО
+        // при расшифровке в Read. Нужен, чтобы при каждом сохранении воспроизводить
+        // весь регион байт-в-байт, включая инвариантные ненулевые байты хвоста
         private byte[] _padPlain = null;
 
         public File File { get; private set; }
@@ -55,6 +55,8 @@ namespace RPFLib.RPF3
             _entries.Add(entry);
         }
 
+        // Вставка записи по индексу index со сдвигом ContentEntryIndex
+        // всех директорий, чьи дети начинаются с index или позже
         public void InsertEntry(int index, TOCEntry entry)
         {
             if (index < 0 || index > _entries.Count)
@@ -74,6 +76,8 @@ namespace RPFLib.RPF3
             }
         }
 
+        // Удаление записи: уменьшение ContentEntryCount родительской директории,
+        // затем сдвиг ContentEntryIndex директорий, стоявших после точки удаления
         public void Delete(TOCEntry entry)
         {
             int pos = _entries.IndexOf(entry);
@@ -146,8 +150,8 @@ namespace RPFLib.RPF3
             }
 
             // Остаток региона: plaintext-хвост после записей.
-            // Запоминаем его ДОСЛОВНО (нули или нет - не предполагаем),
-            // чтобы при сохранении перезаписать весь регион байт-в-байт
+            // Запоминаем ДОСЛОВНО (нули или нет - не предполагаем),
+            // чтобы при сохранении воспроизвести весь регион байт-в-байт
             int stringDataSize = File.Header.TOCSize - File.Header.EntryCount * 16;
             if (stringDataSize > 0)
             {
@@ -176,10 +180,12 @@ namespace RPFLib.RPF3
             return "";
         }
 
-        // Сериализация: записи + дословный plaintext-хвост (из снимка Open),
-        // дополненный нулями до полного размера региона GetStoredSize(),
-        // затем шифрование ВСЕГО региона. Таким образом каждый save перезаписывает
-        // область [0x800, 0x800+TOCSize) целиком - хвост больше не наследуется от шаблона
+        // Сериализация: записи + plaintext-хвост, затем шифрование ВСЕГО региона.
+        // Хвост якорится к КОНЦУ региона (конец региона фиксирован, записи растут
+        // от начала): при росте числа записей хвост съедается с ГОЛОВЫ - берём
+        // хвостовые байты снимка; при уменьшении - недостающие байты дописываются
+        // нулями спереди. Таким образом инвариантные байты конца региона
+        // (в т.ч. ненулевой последний блок) переживают любые колебания числа записей
         public void Write(BinaryWriter bw)
         {
             int target = GetStoredSize();
@@ -195,21 +201,26 @@ namespace RPFLib.RPF3
 
                 if (File.Header.Encrypted)
                 {
-                    // Дословный хвост из снимка; если записи съели часть - обрезаем,
-                    // если хвоста не хватает - дополняем нулями
                     int entriesLen = (int)ms.Length;
                     int padWant = target - entriesLen;
                     if (padWant > 0)
                     {
                         byte[] pad = _padPlain ?? new byte[0];
-                        int take = Math.Min(pad.Length, padWant);
-                        if (take > 0)
+                        if (pad.Length >= padWant)
                         {
-                            tempbw.Write(pad, 0, take);
+                            // Берём ХВОСТ снимка: инвариантные байты конца региона
+                            // (включая ненулевой последний блок) остаются на своих местах
+                            tempbw.Write(pad, pad.Length - padWant, padWant);
                         }
-                        if (take < padWant)
+                        else
                         {
-                            tempbw.Write(new byte[padWant - take]);
+                            // Снимок короче нужного: недостающие байты - нули спереди,
+                            // затем весь снимок дословно
+                            tempbw.Write(new byte[padWant - pad.Length]);
+                            if (pad.Length > 0)
+                            {
+                                tempbw.Write(pad, 0, pad.Length);
+                            }
                         }
                     }
                 }
