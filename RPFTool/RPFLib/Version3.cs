@@ -271,6 +271,12 @@ namespace RPFLib
             _rpfFile.save();
         }
 
+        // Проброс аудита целостности для обработчика кнопки сверки
+        public string Audit(out int errorCount, out int warnCount)
+        {
+            return _rpfFile.Audit(out errorCount, out warnCount);
+        }
+
         private void BuildFS()
         {
             // Связи строятся заново под каждый открытый архив
