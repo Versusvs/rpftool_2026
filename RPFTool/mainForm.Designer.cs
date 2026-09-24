@@ -52,6 +52,8 @@
             this.iExtractAll = new DevExpress.XtraBars.BarButtonItem();
             this.btn_exportFileList = new DevExpress.XtraBars.BarButtonItem();
             this.btn_UnpackRSC = new DevExpress.XtraBars.BarButtonItem();
+            this.btn_PackRSC = new DevExpress.XtraBars.BarButtonItem();
+            this.btn_PackNewRSC = new DevExpress.XtraBars.BarButtonItem();
             this.verifyArchiveToolStripMenuItem = new DevExpress.XtraBars.BarButtonItem();
             this.btn_stats = new DevExpress.XtraBars.BarButtonItem();
             this.mHelp = new DevExpress.XtraBars.BarSubItem();
@@ -233,9 +235,11 @@
             this.btn_exportFileList,
             this.btn_UnpackRSC,
             this.verifyArchiveToolStripMenuItem,
-            this.btn_stats});
+            this.btn_stats,
+            this.btn_PackRSC,
+            this.btn_PackNewRSC});
             this.barManager.MainMenu = this.bar2;
-            this.barManager.MaxItemId = 39;
+            this.barManager.MaxItemId = 41;
             this.barManager.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
             this.tb_searchEdit});
             // 
@@ -304,6 +308,8 @@
             new DevExpress.XtraBars.LinkPersistInfo(this.iExtractAll),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_exportFileList),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_UnpackRSC),
+            new DevExpress.XtraBars.LinkPersistInfo(this.btn_PackRSC),
+            new DevExpress.XtraBars.LinkPersistInfo(this.btn_PackNewRSC),
             new DevExpress.XtraBars.LinkPersistInfo(this.verifyArchiveToolStripMenuItem),
             new DevExpress.XtraBars.LinkPersistInfo(this.btn_stats)});
             this.barSubItem2.Name = "barSubItem2";
@@ -330,6 +336,20 @@
             this.btn_UnpackRSC.Name = "btn_UnpackRSC";
             this.btn_UnpackRSC.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_UnpackRSC_ItemClick);
             // 
+            // btn_PackRSC
+            // 
+            this.btn_PackRSC.Caption = "Pack Modified Resource (MCLA)";
+            this.btn_PackRSC.Id = 39;
+            this.btn_PackRSC.Name = "btn_PackRSC";
+            this.btn_PackRSC.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_PackRSC_ItemClick);
+            // 
+            // btn_PackNewRSC
+            // 
+            this.btn_PackNewRSC.Caption = "Pack New Resource (MCLA)";
+            this.btn_PackNewRSC.Id = 40;
+            this.btn_PackNewRSC.Name = "btn_PackNewRSC";
+            this.btn_PackNewRSC.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_PackNewRSC_ItemClick);
+            // 
             // verifyArchiveToolStripMenuItem
             // 
             this.verifyArchiveToolStripMenuItem.Caption = "Verify";
@@ -340,7 +360,7 @@
             // 
             // btn_stats
             // 
-            this.btn_stats.Caption = "Check archive integrity";
+            this.btn_stats.Caption = "Archive stats / compare";
             this.btn_stats.Id = 38;
             this.btn_stats.Name = "btn_stats";
             this.btn_stats.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.btn_stats_ItemClick);
@@ -739,6 +759,8 @@
         private System.Windows.Forms.ToolStripMenuItem btn_add;
         private DevExpress.XtraBars.BarButtonItem verifyArchiveToolStripMenuItem;
         private DevExpress.XtraBars.BarButtonItem btn_stats;
+        private DevExpress.XtraBars.BarButtonItem btn_PackRSC;
+        private DevExpress.XtraBars.BarButtonItem btn_PackNewRSC;
 
     }
 }

@@ -214,6 +214,61 @@ namespace RPFTool
                 }
             }
         }
+        private void btn_PackRSC_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            using (var donorDlg = new OpenFileDialog())
+            {
+                donorDlg.Title = "Select ORIGINAL packed resource (header donor)";
+                donorDlg.Filter = "All files (*.*)|*.*";
+                if (donorDlg.ShowDialog(this) != DialogResult.OK) return;
+                byte[] donor = System.IO.File.ReadAllBytes(donorDlg.FileName);
+
+                using (var dataDlg = new OpenFileDialog())
+                {
+                    dataDlg.Title = "Select UNPACKED (edited) resource data";
+                    dataDlg.Filter = "All files (*.*)|*.*";
+                    if (dataDlg.ShowDialog(this) != DialogResult.OK) return;
+                    byte[] flat = System.IO.File.ReadAllBytes(dataDlg.FileName);
+
+                    string error;
+                    byte[] packed = RPFLib.Resources.RSCFile.Pack(donor, flat, out error);
+                    if (packed == null)
+                    {
+                        MessageBox.Show(error, "Pack Resource",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    using (var saveDlg = new SaveFileDialog())
+                    {
+                        saveDlg.FileName = Path.GetFileName(donorDlg.FileName) + "_repacked";
+                        if (saveDlg.ShowDialog(this) == DialogResult.OK)
+                        {
+                            System.IO.File.WriteAllBytes(saveDlg.FileName, packed);
+//                               if (RPFLib.Resources.RSCFile.LastZlibReport != null)
+//                                   MessageBox.Show(RPFLib.Resources.RSCFile.LastZlibReport,
+//                                       "Zlib report", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+
+                    if (filelistview.SelectedObjects.Count == 1 &&
+                        filelistview.SelectedObject is RPFLib.Common.File)
+                    {
+                        if (MessageBox.Show(
+                                "Replace selected archive entry with the repacked resource?",
+                                "Pack Resource", MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Question) == DialogResult.Yes)
+                        {
+                            var file = filelistview.SelectedObject as RPFLib.Common.File;
+                            file.SetData(packed);
+                            filelistview.RefreshSelectedObjects();
+                            if (!this.Text.Contains("*")) this.Text += "*";
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion
         #region BackgroundWorker
         private void bgwListBuilder_DoWork(object sender, DoWorkEventArgs e)
@@ -929,59 +984,57 @@ namespace RPFTool
 
         private void btn_stats_ItemClick(object sender, ItemClickEventArgs e)
         {
-            // 1. Audit is only available for an open RPF3 archive
-            var v3 = archiveFile as Version3;
-            if (v3 == null)
+            string pathA = null;
+            string pathB = null;
+
+            using (var ofd = new OpenFileDialog())
             {
-                MessageBox.Show("Audit is only available for an open RPF3 archive.",
-                    "Audit", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+                ofd.Title = "Stats: select ORIGINAL archive (A)";
+                ofd.Filter = "RPF archives (*.rpf)|*.rpf|All files (*.*)|*.*";
+                if (ofd.ShowDialog(this) != DialogResult.OK) return;
+                pathA = ofd.FileName;
+            }
+
+            // В качестве B удобно взять текущий открытый архив (его состояние на диске)
+            if (archiveFile != null && !string.IsNullOrEmpty(currentFileName))
+            {
+                var useCurrent = MessageBox.Show(
+                    "Use the currently open archive as B (modified)?" + Environment.NewLine +
+                    "(" + currentFileName + ")",
+                    "Stats", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (useCurrent == DialogResult.Cancel) return;
+                if (useCurrent == DialogResult.Yes) pathB = currentFileName;
+            }
+
+            if (pathB == null)
+            {
+                using (var ofd = new OpenFileDialog())
+                {
+                    ofd.Title = "Stats: select MODIFIED archive (B)";
+                    ofd.Filter = "RPF archives (*.rpf)|*.rpf|All files (*.*)|*.*";
+                    if (ofd.ShowDialog(this) != DialogResult.OK) return;
+                    pathB = ofd.FileName;
+                }
             }
 
             try
             {
-                int errs, warns;
-                string report;
-
-                // 2. Run audit: long operation (reads and decompresses all blocks),
-                //    so use WaitCursor
                 using (Cursors.WaitCursor)
                 {
-                    report = v3.Audit(out errs, out warns);
-                }
+                    string report = RpfStat.BuildReport(pathA, pathB);
+                    string outPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rpf_stats.txt");
+                    System.IO.File.WriteAllText(outPath, report);
 
-                // 3. Full report - to a file next to the exe
-                string outPath = System.IO.Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory, "rpf_audit.txt");
-                System.IO.File.WriteAllText(outPath, report);
-
-                // 4. Short summary in a dialog + offer to open the report
-                string summary = string.Format(
-                    "Audit finished: errors={0}, warnings={1}.",
-                    errs, warns);
-                if (errs == 0 && warns == 0)
-                {
-                    summary += Environment.NewLine + "No format rule violations found.";
-                }
-
-                var answer = MessageBox.Show(
-                    summary + Environment.NewLine + Environment.NewLine +
-                    "Full report: " + outPath + Environment.NewLine + Environment.NewLine +
-                    "Open the report?",
-                    errs == 0 ? "Audit: OK" : "Audit: ERRORS",
-                    MessageBoxButtons.YesNo,
-                    errs == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Error);
-
-                if (answer == DialogResult.Yes)
-                {
-                    System.Diagnostics.Process.Start("notepad.exe", outPath);
+                    string summary = ExtractSummaryLines(report);
+                    MessageBox.Show(
+                        summary + Environment.NewLine + Environment.NewLine + "Full report: " + outPath,
+                        "Stats result", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                // 5. Any audit failure - show in dialog, do not touch the archive
-                MessageBox.Show("Audit failed: " + ex.Message,
-                    "Audit", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Stats failed: " + ex.Message,
+                    "Stats", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         // Вытаскивает из отчёта главные строки для быстрого диалога
@@ -1011,6 +1064,58 @@ namespace RPFTool
                 }
             }
             return sb.Length > 0 ? sb.ToString() : "(no summary lines in report)";
+        }
+
+        private void btn_PackRSC_ItemClick_1(object sender, ItemClickEventArgs e)
+        {
+
+        }
+
+        private void btn_PackNewRSC_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            using (var ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Select UNPACKED (flat) resource data";
+                ofd.Filter = "All files (*.*)|*.*";
+                if (ofd.ShowDialog(this) != DialogResult.OK) return;
+
+                byte[] flat;
+                try { flat = System.IO.File.ReadAllBytes(ofd.FileName); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Pack New Resource",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                using (var frm = new PackNewResourceForm(flat, ofd.FileName))
+                {
+                    if (frm.ShowDialog(this) != DialogResult.OK) return;
+
+                    string error;
+                    byte[] packed = RPFLib.Resources.RSCFile.PackNew(flat, frm.Options, out error);
+                    if (packed == null)
+                    {
+                        MessageBox.Show(error, "Pack New Resource",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    using (var sfd = new SaveFileDialog())
+                    {
+                        sfd.Title = "Save new packed resource";
+                        sfd.FileName = System.IO.Path.GetFileName(ofd.FileName);
+                        sfd.Filter = "All files (*.*)|*.*";
+                        if (sfd.ShowDialog(this) != DialogResult.OK) return;
+                        System.IO.File.WriteAllBytes(sfd.FileName, packed);
+                        MessageBox.Show(
+                            string.Format("Packed {0} bytes -> {1} bytes.", flat.Length, packed.Length),
+                            "Pack New Resource", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+
+
         }
     }
 }
