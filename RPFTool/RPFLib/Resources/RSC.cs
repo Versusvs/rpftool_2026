@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,8 +20,8 @@ namespace RPFLib.Resources
         public byte[] fileData;
 
         // Magic numbers (big-endian)
-        private const int RSC_MAGIC_PACKED_V1 = 0x05435352;  //  88298322  — LZX compressed
-        private const int RSC_MAGIC_PACKED_V2 = 0x06435352;  // 107942738  — zlib compressed
+        private const int RSC_MAGIC_PACKED_V1 = 0x05435352;   //  88298322   — LZX compressed
+        private const int RSC_MAGIC_PACKED_V2 = 0x06435352;   // 107942738   — zlib compressed
         private const int RSC_MAGIC_PACKED_ENC = unchecked((int)0x85435352); // -2059185326 — encrypted (LZX)
         #endregion
 
@@ -41,9 +41,7 @@ namespace RPFLib.Resources
                     fileData = null;
                     return;
                 }
-
                 byte[] buffer;
-
                 switch (hdr.m_dwMagic)
                 {
                     // --------------------------------------------------------
@@ -62,7 +60,6 @@ namespace RPFLib.Resources
                                 fileData = null;
                                 return;
                             }
-
                             if (hdr.m_dwVersion == 2)
                             {
                                 reader.BaseStream.Position = 16;
@@ -102,7 +99,6 @@ namespace RPFLib.Resources
                             }
                         }
                         break;
-
                     // --------------------------------------------------------
                     // Packed V1 — LZX (magic 0x05435352)
                     // --------------------------------------------------------
@@ -119,7 +115,6 @@ namespace RPFLib.Resources
                                 fileData = null;
                                 return;
                             }
-
                             reader.BaseStream.Position = 20;
                             buffer = reader.ReadBytes((int)reader.BaseStream.Length - 20);
                             fileData = new byte[hdr.getSizeV() + hdr.getSizeP()];
@@ -131,7 +126,6 @@ namespace RPFLib.Resources
                             }
                         }
                         break;
-
                     // --------------------------------------------------------
                     // Packed V2 — zlib (magic 0x06435352)
                     // --------------------------------------------------------
@@ -149,7 +143,6 @@ namespace RPFLib.Resources
                             }
                         }
                         break;
-
                     default:
                         MessageBox.Show("Unrecognised header", "Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -192,19 +185,16 @@ namespace RPFLib.Resources
                             bUseExtSize = (m_dwFlags2 & unchecked((int)0x80000000))
                                            == unchecked((int)0x80000000);
                             return true;
-
                         case RSC_MAGIC_PACKED_V1: // 0x05435352 — LZX packed
                             this.m_dwVersion = reader.ReadInt32();
                             this.m_dwFlags1 = reader.ReadInt32();
                             bUseExtSize = false;
                             return true;
-
                         case RSC_MAGIC_PACKED_V2: // 0x06435352 — zlib packed
                             this.m_dwVersion = reader.ReadInt32();
                             this.m_dwFlags1 = reader.ReadInt32();
                             bUseExtSize = false;
                             return true;
-
                         default:
                             return false;
                     }
@@ -249,13 +239,13 @@ namespace RPFLib.Resources
             public int SizeP;         // размер physical-секции
         }
 
-        private static readonly byte[] PreambleMarker = { 0x0F, 0xF5, 0x12, 0xF1 };
+        // ИСПРАВЛЕНО: последний байт маркера — 0xEF (как в реальных файлах и в PackNew)
+        private static readonly byte[] PreambleMarker = { 0x0F, 0xF5, 0x12, 0xEF };
 
         public static bool TryParseLayout(byte[] data, out RSCLayout layout)
         {
             layout = new RSCLayout();
             if (data == null || data.Length < 12) return false;
-
             using (var ms = new MemoryStream(data, false))
             using (var r = new BigEndianBinaryReader(ms))
             {
@@ -263,7 +253,6 @@ namespace RPFLib.Resources
                 layout.Version = r.ReadInt32();
                 int flags1 = r.ReadInt32();
                 int flags2 = 0;
-
                 switch (layout.Magic)
                 {
                     case RSC_MAGIC_PACKED_ENC: // 0x85435352
@@ -272,25 +261,20 @@ namespace RPFLib.Resources
                         layout.HeaderEnd = 16;
                         layout.Encrypted = (layout.Version == 2);
                         break;
-
                     case RSC_MAGIC_PACKED_V1: // 0x05435352
                         layout.HeaderEnd = 12;
                         layout.Encrypted = false;
                         flags2 = 0;
                         break;
-
                     case RSC_MAGIC_PACKED_V2: // 0x06435352
                         layout.HeaderEnd = 12;
                         layout.Encrypted = false;
                         flags2 = 0;
                         break;
-
                     default:
                         return false;
                 }
-
                 layout.PayloadStart = layout.HeaderEnd + 8;
-
                 bool useExt = (flags2 & unchecked((int)0x80000000)) == unchecked((int)0x80000000);
                 if (useExt)
                 {
@@ -336,12 +320,18 @@ namespace RPFLib.Resources
         public static byte[] Pack(byte[] originalPacked, byte[] newFlatData, out string error)
         {
             error = null;
-
             RSCLayout L;
             if (!TryParseLayout(originalPacked, out L))
             {
                 error = "Donor file is not a supported RSC container (bad magic or too short).";
                 return null;
+            }
+
+            // НОВОЕ: если размер flat изменён — уходим в resize-путь (до роутинга по кодекам)
+            int donorTotal = L.SizeV + L.SizeP;
+            if (newFlatData != null && newFlatData.Length != donorTotal)
+            {
+                return PackResized(originalPacked, newFlatData, out error);
             }
 
             // Для packed_v2 (zlib) используем отдельный метод
@@ -392,9 +382,7 @@ namespace RPFLib.Resources
                 Buffer.BlockCopy(PreambleMarker, 0, pre, 0, 4);
             }
 
-            // Записываем размер сжатого поля. 
-            // Округление до 8 байт ((compressed.Length + 7) & ~7) УБРАНО по вашему требованию.
-            // Теперь записывается точная длина сжатых данных.
+            // Записываем точную длину сжатых данных (округление до 8 байт убрано).
             int fieldLen = compressed.Length;
             pre[4] = (byte)(fieldLen >> 24);
             pre[5] = (byte)(fieldLen >> 16);
@@ -447,8 +435,11 @@ namespace RPFLib.Resources
                     newFlatData == null ? 0 : newFlatData.Length, total, L.SizeV, L.SizeP);
                 return null;
             }
+
+            // донорский zlib-поток целиком (начинается сразу с offset 12)
             byte[] donorPayload = new byte[originalPacked.Length - 12];
             Buffer.BlockCopy(originalPacked, 12, donorPayload, 0, donorPayload.Length);
+
             byte[] compressed = null;
             if (ZlibNative.IsAvailable)
             {
@@ -482,14 +473,180 @@ namespace RPFLib.Resources
                 error = "zlib compression failed.";
                 return null;
             }
+
             byte[] result = new byte[12 + compressed.Length];
-            Buffer.BlockCopy(originalPacked, 0, result, 0, 12);
+            Buffer.BlockCopy(originalPacked, 0, result, 0, 12);          // шапка донора как есть
             Buffer.BlockCopy(compressed, 0, result, 12, compressed.Length);
             return result;
         }
+
+        // ================================================================
+        // НОВОЕ: Resize support (flat с изменённым размером)
+        // ================================================================
+        private static uint ReadBE(byte[] b, int i)
+        {
+            return (uint)((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]);
+        }
+
+        private static byte[] Slice(byte[] a, int off, int len)
+        {
+            byte[] r = new byte[len];
+            Buffer.BlockCopy(a, off, r, 0, len);
+            return r;
+        }
+
+        // Распакованный flat донора для любого контейнера (нужен для классификации правки)
+        public static byte[] GetDonorFlat(byte[] donor)
+        {
+            RSCLayout L;
+            if (!TryParseLayout(donor, out L)) return null;
+            int total = L.SizeV + L.SizeP;
+            if (total <= 0) return null;
+            if (L.Magic == RSC_MAGIC_PACKED_V2)
+                return InflateTo(Slice(donor, 12, donor.Length - 12), total);
+            byte[] body = Slice(donor, L.HeaderEnd, donor.Length - L.HeaderEnd);
+            if (L.Encrypted) body = DataUtil.Decrypt(body);
+            if (body.Length < 8) return null;
+            byte[] flat = new byte[total];
+            return (Decompress(Slice(body, 8, body.Length - 8), flat) == 0) ? flat : null;
+        }
+
+        // Сдвиг абсолютных physical-указателей (0x60…) при переезде physical-секции
+        private static void RebasePhysical(byte[] flat, int oldV, int oldTotal, int delta)
+        {
+            for (int i = 0; i + 4 <= flat.Length; i += 4)
+            {
+                uint d = ReadBE(flat, i);
+                if ((d & 0xFF000000u) != 0x60000000u) continue;
+                int off = (int)(d & 0x00FFFFFFu);
+                if (off < oldV || off >= oldTotal) continue;
+                off += delta;
+                WriteBE(flat, i, (int)((d & 0xFF000000u) | (uint)(off & 0x00FFFFFFu)));
+            }
+        }
+
+        // Перепаковка с изменённым размером: новые V/P в шапке, rebase указателей,
+        // пад до страницы, пережатие тем же кодеком, что у донора.
+        public static byte[] PackResized(byte[] donorPacked, byte[] newFlat, out string error)
+        {
+            error = null;
+            RSCLayout L;
+            if (!TryParseLayout(donorPacked, out L)) { error = "Bad donor container."; return null; }
+            int oldV = L.SizeV, oldP = L.SizeP, oldTotal = oldV + oldP;
+            byte[] donorFlat = GetDonorFlat(donorPacked);
+            if (donorFlat == null) { error = "Cannot decompress donor."; return null; }
+            if (newFlat == null || newFlat.Length == 0) { error = "Empty flat."; return null; }
+            if (newFlat.Length == oldTotal) return Pack(donorPacked, newFlat, out error);
+
+            // --- пад до страницы 4096 нулями ---
+            byte[] flat = (byte[])newFlat.Clone();
+            int paddedTotal = AlignPage(flat.Length);
+            if (paddedTotal != flat.Length)
+            {
+                byte[] t = new byte[paddedTotal];
+                Buffer.BlockCopy(flat, 0, t, 0, flat.Length);
+                flat = t;
+            }
+
+            // --- классификация правки (по padded-массиву) ---
+            int common = 0, n = Math.Min(oldTotal, flat.Length);
+            while (common < n && donorFlat[common] == flat[common]) common++;
+
+            bool tailPhys;
+            int newV = oldV, delta = 0;
+            if (common == oldTotal && flat.Length >= oldTotal)
+            {
+                tailPhys = true;                 // дописали в конце physical
+            }
+            else if (common == flat.Length && flat.Length < oldTotal)
+            {
+                tailPhys = true;                 // отрезали в конце physical
+            }
+            else
+            {
+                tailPhys = false;                // physical-блок переехал целиком (рос/усох virtual)
+                newV = paddedTotal - oldP;
+                delta = newV - oldV;
+                if (newV <= 0 || newV > paddedTotal) { error = "Cannot derive new virtual size."; return null; }
+                for (int i = 0; i < Math.Min(oldV, newV); i++)
+                    if (donorFlat[i] != flat[i])
+                    { error = "Middle edit with size change: full relocation required, not supported."; return null; }
+                for (int i = 0; i < oldP; i++)
+                    if (donorFlat[oldV + i] != flat[newV + i])
+                    { error = "Middle edit with size change: physical block not intact, not supported."; return null; }
+            }
+
+            int newP = paddedTotal - newV;
+            if (newP < 0) { error = "Invalid new V/P split."; return null; }
+
+            if (!tailPhys && delta != 0)
+                RebasePhysical(flat, oldV, oldTotal, delta);
+
+            // --- шапка: из донора, но с новыми размерами ---
+            byte[] header = new byte[L.HeaderEnd];
+            Buffer.BlockCopy(donorPacked, 0, header, 0, L.HeaderEnd);
+            int flags1;
+            if (TryBuildFlags1(newV, newP, out flags1))
+            {
+                WriteBE(header, 8, flags1);
+            }
+            else if (L.HeaderEnd == 16)
+            {
+                int f2 = (int)ReadBE(donorPacked, 12);
+                int keep = f2 & unchecked((int)0xF0000000);   // _f14_30 + bUseExtSize
+                WriteBE(header, 12, keep | ((newV >> 12) & 0x7FFF) | (((newP >> 12) << 14) & 0xFFF7000));
+            }
+            else { error = "New sizes not encodable in flags1."; return null; }
+
+            // --- payload тем же кодеком, что у донора ---
+            byte[] body;
+            if (L.Magic == RSC_MAGIC_PACKED_V2)
+            {
+                byte[] payload = null;
+                if (ZlibNative.IsAvailable)
+                {
+                    byte[] donorPayload = Slice(donorPacked, 12, donorPacked.Length - 12);
+                    int lv = ZlibNative.MatchLevelOnDonor(donorFlat, donorPayload,
+                                                          ZlibNative.LevelFromFlg(donorPayload[1]));
+                    if (lv < 0) lv = ZlibNative.LevelFromFlg(donorPayload[1]);
+                    payload = ZlibNative.Compress(flat, lv);
+                }
+                if (payload == null) payload = CompressZlib(flat);
+                if (payload == null || payload.Length == 0) { error = "zlib compression failed."; return null; }
+                body = payload;
+            }
+            else
+            {
+                byte[] comp = Compress(flat);
+                if (comp == null || comp.Length == 0) { error = "LZX compression failed."; return null; }
+                int se = FindStreamEnd(comp, flat.Length);
+                if (se > 0 && se < comp.Length) Array.Resize(ref comp, se);
+                body = new byte[8 + comp.Length];
+                body[0] = 0x0F; body[1] = 0xF5; body[2] = 0x12; body[3] = 0xEF;
+                WriteBE(body, 4, comp.Length);
+                Buffer.BlockCopy(comp, 0, body, 8, comp.Length);
+                if (L.Encrypted)
+                {
+                    int pad = (16 - (body.Length & 15)) & 15;
+                    if (pad > 0)
+                    {
+                        byte[] t = new byte[body.Length + pad];
+                        Buffer.BlockCopy(body, 0, t, 0, body.Length);
+                        body = t;
+                    }
+                    body = DataUtil.Encrypt(body);
+                }
+            }
+
+            byte[] res = new byte[header.Length + body.Length];
+            Buffer.BlockCopy(header, 0, res, 0, header.Length);
+            Buffer.BlockCopy(body, 0, res, header.Length, body.Length);
+            LastZlibReport = string.Format(
+                "Resize: V 0x{0:X}->0x{1:X}, P 0x{2:X}->0x{3:X}, delta=0x{4:X}, pad={5} bytes",
+                oldV, newV, oldP, newP, delta, paddedTotal - newFlat.Length);
+            return res;
+        }
         #endregion
-
-
 
         #region zlib1.dll P/Invoke (вариант А: побайтовые репаки)
         public static class ZlibNative
@@ -503,11 +660,9 @@ namespace RPFLib.Resources
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "compressBound")]
             private static extern uint compressBound_native(uint srcLen);
 
-            // ИСПРАВЛЕНО: Указано полное имя System.IO.File и System.IO.Path
             private static readonly bool _available =
                 System.IO.File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DllName));
 
-            // ИСПРАВЛЕНО: Классический синтаксис свойства для старых версий C#
             public static bool IsAvailable
             {
                 get { return _available; }
@@ -555,35 +710,29 @@ namespace RPFLib.Resources
             }
         }
 
-        // Диагностика последнего прогона PackZlib (для сообщений/лога)
-        // ВАЖНО: Убедитесь, что эти поля находятся ВНУТРИ класса RSCFile, 
-        // а не просто висят в пространстве имен RPFLib.Resources!
+        // Диагностика последнего прогона PackZlib / PackResized (для сообщений/лога)
         public static string LastZlibReport { get; private set; }
         private static bool _zlibLevelCacheValid;
         private static byte _zlibLevelCacheFlg;
         private static int _zlibLevelCache = -1;
         #endregion
 
-
         #region De/Compression
-
+        // ИСПРАВЛЕНО: static — нужен для GetDonorFlat (вызовы из конструктора остаются валидными)
         [HandleProcessCorruptedStateExceptionsAttribute]
-        int Decompress(byte[] compressedData, byte[] decompressedData)
+        static int Decompress(byte[] compressedData, byte[] decompressedData)
         {
             int target = decompressedData.Length;
             if (compressedData == null || compressedData.Length == 0 || target <= 0)
                 return -1;
-
             const int Slack = 1 << 20;
             byte[] src = new byte[compressedData.Length + Slack];
             Buffer.BlockCopy(compressedData, 0, src, 0, compressedData.Length);
             byte[] dst = new byte[target + Slack];
-
             int DecompressionContext = 0;
             int hr = xcompress.XMemCreateDecompressionContext(
                 xcompress.XMEMCODEC_TYPE.XMEMCODEC_LZX,
                 0, 0, ref DecompressionContext);
-
             int compressedLen = src.Length;
             int decompressedLen = dst.Length;
             try
@@ -596,13 +745,10 @@ namespace RPFLib.Resources
             {
                 hr = -1;
             }
-
             if (DecompressionContext != 0)
                 xcompress.XMemDestroyDecompressionContext(DecompressionContext);
-
             if (hr != 0 || decompressedLen != target)
                 return -1;
-
             Buffer.BlockCopy(dst, 0, decompressedData, 0, target);
             return 0;
         }
@@ -613,16 +759,13 @@ namespace RPFLib.Resources
             int hr = xcompress.XMemCreateCompressionContext(
                 xcompress.XMEMCODEC_TYPE.XMEMCODEC_LZX,
                 0, 1, ref compressionContext);
-
             int compressedLen = decompressedData.Length * 2;
             byte[] compressed = new byte[compressedLen];
             int decompressedLen = decompressedData.Length;
             hr = xcompress.XMemCompress(compressionContext,
                 compressed, ref compressedLen,
                 decompressedData, decompressedLen);
-
             xcompress.XMemDestroyCompressionContext(compressionContext);
-
             Array.Resize<byte>(ref compressed, compressedLen);
             return compressed;
         }
@@ -657,104 +800,82 @@ namespace RPFLib.Resources
             return 0;
         }
 
-
-// ---------------------------------------------------------------
-// Zlib-компрессия (для packed_v2)
-// ---------------------------------------------------------------
-/// <summary>
-/// Сжимает данные в Zlib. 
-/// По умолчанию используется FLG = 0x9C (Default Compression), так как он наиболее 
-/// универсален. 0xDA (Max) тоже валиден, но .NET DeflateStream не умеет честно 
-/// выставлять Max уровень, что иногда смущает кастомные парсеры (но не стандартный inflate).
-/// </summary>
-public static byte[] CompressZlib(byte[] decompressedData, byte flg = 0x9C)
-{
-    if (decompressedData == null || decompressedData.Length == 0)
-        throw new ArgumentException("Данные для сжатия не могут быть пустыми.");
-
-    using (var ms = new MemoryStream())
-    {
-        // CMF = 0x78 (CM=8 (deflate), CINFO=7 (32K window))
-        byte cmf = 0x78;
-        
-        // Жесткая проверка валидности заголовка (FCHECK)
-        // Сумма (CMF * 256 + FLG) должна быть кратна 31
-        if ((cmf * 256 + flg) % 31 != 0)
-            throw new ArgumentException("Wrong Zlib header: CMF=0x{cmf:X2}, FLG=0x{flg:X2}. Rule FCHECK failed.");
-
-        ms.WriteByte(cmf);
-        ms.WriteByte(flg);
-
-        // DeflateStream создает "сырой" DEFLATE поток без zlib-обертки.
-        using (var ds = new DeflateStream(ms, CompressionMode.Compress, true))
+        // ---------------------------------------------------------------
+        // Zlib-компрессия (для packed_v2)
+        // ---------------------------------------------------------------
+        public static byte[] CompressZlib(byte[] decompressedData, byte flg = 0x9C)
         {
-            ds.Write(decompressedData, 0, decompressedData.Length);
-        }
-
-        // Добавляем Adler32 checksum (строго big-endian)
-        uint adler = Adler32(decompressedData);
-        ms.WriteByte((byte)(adler >> 24));
-        ms.WriteByte((byte)(adler >> 16));
-        ms.WriteByte((byte)(adler >> 8));
-        ms.WriteByte((byte)adler);
-
-        byte[] compressed = ms.ToArray();
-
-        // КОНТРОЛЬ: Проверяем, что мы сами можем распаковать то, что только что сжали.
-        // Это гарантирует, что игра не крашнется из-за битого DEFLATE потока.
-        if (!ValidateZlibStream(compressed, decompressedData))
-        {
-            throw new InvalidOperationException("Критическая ошибка валидации: сжатый поток не распаковывается обратно в оригинальные данные!");
-        }
-
-        return compressed;
-    }
-}
-
-/// <summary>
-/// Валидация Zlib потока (эмулирует то, что сделает игра при чтении файла)
-/// </summary>
-private static bool ValidateZlibStream(byte[] compressed, byte[] original)
-{
-    try
-    {
-        if (compressed.Length < 6) return false;
-        
-        // Пропускаем 2 байта заголовка (CMF, FLG)
-        int deflateStart = 2;
-        // Отсекаем 4 байта Adler32 в конце
-        int deflateLen = compressed.Length - 2 - 4; 
-        
-        if (deflateLen <= 0) return false;
-
-        using (var ms = new MemoryStream(compressed, deflateStart, deflateLen))
-        using (var ds = new DeflateStream(ms, CompressionMode.Decompress))
-        {
-            byte[] decompressed = new byte[original.Length];
-            int totalRead = 0;
-            while (totalRead < original.Length)
+            if (decompressedData == null || decompressedData.Length == 0)
+                throw new ArgumentException("Данные для сжатия не могут быть пустыми.");
+            using (var ms = new MemoryStream())
             {
-                int read = ds.Read(decompressed, totalRead, original.Length - totalRead);
-                if (read == 0) break; // Поток закончился раньше времени
-                totalRead += read;
+                // CMF = 0x78 (CM=8 (deflate), CINFO=7 (32K window))
+                byte cmf = 0x78;
+                // Жесткая проверка валидности заголовка (FCHECK):
+                // сумма (CMF * 256 + FLG) должна быть кратна 31
+                // ИСПРАВЛЕНО: сообщение через string.Format
+                if ((cmf * 256 + flg) % 31 != 0)
+                    throw new ArgumentException(string.Format(
+                        "Wrong Zlib header: CMF=0x{0:X2}, FLG=0x{1:X2}. Rule FCHECK failed.", cmf, flg));
+                ms.WriteByte(cmf);
+                ms.WriteByte(flg);
+                // DeflateStream создает "сырой" DEFLATE поток без zlib-обертки.
+                using (var ds = new DeflateStream(ms, CompressionMode.Compress, true))
+                {
+                    ds.Write(decompressedData, 0, decompressedData.Length);
+                }
+                // Добавляем Adler32 checksum (строго big-endian)
+                uint adler = Adler32(decompressedData);
+                ms.WriteByte((byte)(adler >> 24));
+                ms.WriteByte((byte)(adler >> 16));
+                ms.WriteByte((byte)(adler >> 8));
+                ms.WriteByte((byte)adler);
+                byte[] compressed = ms.ToArray();
+                // КОНТРОЛЬ: проверяем, что мы сами можем распаковать то, что только что сжали.
+                if (!ValidateZlibStream(compressed, decompressedData))
+                {
+                    throw new InvalidOperationException(
+                        "Критическая ошибка валидации: сжатый поток не распаковывается обратно в оригинальные данные!");
+                }
+                return compressed;
             }
-            
-            // Если прочитали не все байты — поток битый
-            if (totalRead != original.Length) return false;
-            
-            // Побайтовое сравнение
-            for (int i = 0; i < original.Length; i++)
-            {
-                if (decompressed[i] != original[i]) return false;
-            }
-            return true;
         }
-    }
-    catch
-    {
-        return false;
-    }
-}
+
+        /// <summary>
+        /// Валидация Zlib потока (эмулирует то, что сделает игра при чтении файла)
+        /// </summary>
+        private static bool ValidateZlibStream(byte[] compressed, byte[] original)
+        {
+            try
+            {
+                if (compressed.Length < 6) return false;
+                int deflateStart = 2;
+                int deflateLen = compressed.Length - 2 - 4;
+                if (deflateLen <= 0) return false;
+                using (var ms = new MemoryStream(compressed, deflateStart, deflateLen))
+                using (var ds = new DeflateStream(ms, CompressionMode.Decompress))
+                {
+                    byte[] decompressed = new byte[original.Length];
+                    int totalRead = 0;
+                    while (totalRead < original.Length)
+                    {
+                        int read = ds.Read(decompressed, totalRead, original.Length - totalRead);
+                        if (read == 0) break;
+                        totalRead += read;
+                    }
+                    if (totalRead != original.Length) return false;
+                    for (int i = 0; i < original.Length; i++)
+                    {
+                        if (decompressed[i] != original[i]) return false;
+                    }
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         // ---------------------------------------------------------------
         // Вычисление Adler32 checksum
@@ -771,7 +892,7 @@ private static bool ValidateZlibStream(byte[] compressed, byte[] original)
         }
         #endregion
 
-
+        #region Pack New (без донора)
         // Опции синтеза контейнера с нуля (без донора)
         public struct PackNewOptions
         {
@@ -822,6 +943,11 @@ private static bool ValidateZlibStream(byte[] compressed, byte[] original)
                 || d == 0x28C25700u;
         }
 
+        // Авто-детект разбивки flat на V/P: кандидаты + скоринг нарушений.
+        // Истинный V обязан согласовываться со всеми указателями:
+        // 0x50-смещения < V; 0x60-смещения либо все < P (relative), либо все >= V (absolute) —
+        // выбираем трактовку с меньшим числом нарушений. Ложные dword'ы дают единицы
+        // нарушений, неверная граница — тысячи, поэтому минимум устойчив.
         public static bool ScanSizes(byte[] flat, out int sizeV, out int sizeP)
         {
             sizeV = 0;
@@ -876,7 +1002,6 @@ private static bool ValidateZlibStream(byte[] compressed, byte[] original)
 
             int bestV = -1;
             long bestScore = long.MaxValue;
-
             foreach (int v in cands)
             {
                 long bad = 0;
@@ -913,7 +1038,6 @@ private static bool ValidateZlibStream(byte[] compressed, byte[] original)
             buf[off + 3] = (byte)value;
         }
 
-        // Синтез контейнера с нуля: заголовок + payload, без донора
         // Синтез контейнера с нуля: заголовок + payload, без донора
         public static byte[] PackNew(byte[] flat, PackNewOptions opt, out string error)
         {
@@ -1006,6 +1130,6 @@ private static bool ValidateZlibStream(byte[] compressed, byte[] original)
                 return res;
             }
         }
-
+        #endregion
     }
 }
