@@ -130,6 +130,9 @@
     <Compile Include="aboutform.Designer.cs">
       <DependentUpon>aboutform.cs</DependentUpon>
     </Compile>
+    <Compile Include="AddResourceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Compression\BZip2\BZip2.cs" />
     <Compile Include="Compression\BZip2\BZip2Constants.cs" />
     <Compile Include="Compression\BZip2\BZip2Exception.cs" />

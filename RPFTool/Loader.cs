@@ -35,6 +35,7 @@ namespace RPFTool
         {
             try
             {
+/*
                 try
                 {
 
@@ -75,11 +76,13 @@ namespace RPFTool
                         });
                     }
                 }
+
                 catch (System.Exception ex)
                 {
                     // VS edit
                     //MessageBox.Show("Failed to download the latest version:" + ex.Message, "Error!", MessageBoxButtons.OK);
                 }
+*/
                 this.Invoke((MethodInvoker)delegate
                 {
                     label_Loading.Text = "Getting Keys...";

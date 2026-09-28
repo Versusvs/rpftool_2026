@@ -38,8 +38,10 @@
             this.btn_extract = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_replace = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_goto = new System.Windows.Forms.ToolStripMenuItem();
-            this.btn_delete = new System.Windows.Forms.ToolStripMenuItem();
             this.btn_add = new System.Windows.Forms.ToolStripMenuItem();
+            this.btn_delete = new System.Windows.Forms.ToolStripMenuItem();
+            this.createFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hotItemStyle1 = new BrightIdeasSoftware.HotItemStyle();
             this.barManager = new DevExpress.XtraBars.BarManager(this.components);
             this.bar2 = new DevExpress.XtraBars.Bar();
@@ -105,9 +107,6 @@
             // 
             // filelistview
             // 
-            this.filelistview.AllColumns.Add(this.columnName);
-            this.filelistview.AllColumns.Add(this.columnAttributes);
-            this.filelistview.AllColumns.Add(this.columnSize);
             this.filelistview.AlternateRowBackColor = System.Drawing.Color.Black;
             this.filelistview.BackColor = System.Drawing.Color.Silver;
             this.filelistview.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -162,10 +161,12 @@
             this.btn_extract,
             this.btn_replace,
             this.btn_goto,
+            this.btn_add,
             this.btn_delete,
-            this.btn_add});
+            this.createFolderToolStripMenuItem,
+            this.deleteFolderToolStripMenuItem});
             this.popupMenu.Name = "popupMenu";
-            this.popupMenu.Size = new System.Drawing.Size(153, 114);
+            this.popupMenu.Size = new System.Drawing.Size(153, 158);
             this.popupMenu.Opening += new System.ComponentModel.CancelEventHandler(this.popupMenu_Opening);
             // 
             // btn_extract
@@ -189,6 +190,13 @@
             this.btn_goto.Text = "Go to Location";
             this.btn_goto.Click += new System.EventHandler(this.btn_goto_Click);
             // 
+            // btn_add
+            // 
+            this.btn_add.Name = "btn_add";
+            this.btn_add.Size = new System.Drawing.Size(152, 22);
+            this.btn_add.Text = "Add file";
+            this.btn_add.Click += new System.EventHandler(this.btn_add_Click);
+            // 
             // btn_delete
             // 
             this.btn_delete.Name = "btn_delete";
@@ -196,12 +204,19 @@
             this.btn_delete.Text = "Delete file";
             this.btn_delete.Click += new System.EventHandler(this.btn_delete_Click);
             // 
-            // btn_add
+            // createFolderToolStripMenuItem
             // 
-            this.btn_add.Name = "btn_add";
-            this.btn_add.Size = new System.Drawing.Size(152, 22);
-            this.btn_add.Text = "Add file";
-            this.btn_add.Click += new System.EventHandler(this.btn_add_Click);
+            this.createFolderToolStripMenuItem.Name = "createFolderToolStripMenuItem";
+            this.createFolderToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.createFolderToolStripMenuItem.Text = "Create folder";
+            this.createFolderToolStripMenuItem.Click += new System.EventHandler(this.createFolderToolStripMenuItem_Click);
+            // 
+            // deleteFolderToolStripMenuItem
+            // 
+            this.deleteFolderToolStripMenuItem.Name = "deleteFolderToolStripMenuItem";
+            this.deleteFolderToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.deleteFolderToolStripMenuItem.Text = "Delete folder";
+            this.deleteFolderToolStripMenuItem.Click += new System.EventHandler(this.deleteFolderToolStripMenuItem_Click);
             // 
             // barManager
             // 
@@ -761,6 +776,8 @@
         private DevExpress.XtraBars.BarButtonItem btn_stats;
         private DevExpress.XtraBars.BarButtonItem btn_PackRSC;
         private DevExpress.XtraBars.BarButtonItem btn_PackNewRSC;
+        private System.Windows.Forms.ToolStripMenuItem createFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem deleteFolderToolStripMenuItem;
 
     }
 }

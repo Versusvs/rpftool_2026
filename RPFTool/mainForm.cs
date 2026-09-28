@@ -759,7 +759,7 @@ namespace RPFTool
                         }
                         else if (item is RPFLib.Common.Directory)
                         {
-                            MessageBox.Show("Deletion of Folders is not yet supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Please use 'Delete folder' option", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                     buildlist(currentDir);
@@ -1117,5 +1117,217 @@ namespace RPFTool
 
 
         }
+
+
+        // Мини-диалог ввода имени папки (без дизайнера)
+        private string PromptFolderName()
+        {
+            using (var f = new Form())
+            {
+                f.Text = "New folder";
+                f.FormBorderStyle = FormBorderStyle.FixedDialog;
+                f.StartPosition = FormStartPosition.CenterParent;
+                f.MaximizeBox = false;
+                f.MinimizeBox = false;
+                f.ClientSize = new System.Drawing.Size(300, 90);
+
+                var tb = new TextBox();
+                tb.Location = new System.Drawing.Point(12, 12);
+                tb.Width = 276;
+
+                var ok = new Button();
+                ok.Text = "OK";
+                ok.DialogResult = DialogResult.OK;
+                ok.Location = new System.Drawing.Point(126, 44);
+                ok.Width = 80;
+
+                var ca = new Button();
+                ca.Text = "Cancel";
+                ca.DialogResult = DialogResult.Cancel;
+                ca.Location = new System.Drawing.Point(210, 44);
+                ca.Width = 80;
+
+                f.AcceptButton = ok;
+                f.CancelButton = ca;
+                f.Controls.Add(tb);
+                f.Controls.Add(ok);
+                f.Controls.Add(ca);
+
+                if (f.ShowDialog() != DialogResult.OK)
+                    return null;
+                return tb.Text.Trim();
+            }
+        }
+
+
+        
+private void createFolderToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    if (!(archiveFile is RPFLib.Version3))
+    {
+        MessageBox.Show("Folder creation is supported only for MCLA (RPF3) archives.",
+            "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+
+    // Родитель: выделенная папка; у выделенного файла - его родитель; иначе текущая открытая
+    RPFLib.Common.Directory parent;
+    var sel = filelistview.SelectedObject as RPFLib.Common.fileSystemObject;
+    if (sel == null)
+        parent = currentDir;
+    else if (sel.IsDirectory)
+        parent = sel as RPFLib.Common.Directory;
+    else
+        parent = sel.ParentDirectory;
+
+    string name = PromptFolderName();
+    if (string.IsNullOrEmpty(name))
+        return;   // отмена
+
+    try
+    {
+        ((RPFLib.Version3)archiveFile).CreateDirectory(parent, name);
+        
+        // ИСПРАВЛЕНО: обновление GUI через buildlist (как после AddFile)
+        buildlist(parent);
+        
+        if (!this.Text.Contains("*"))
+            this.Text += "*";
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+    }
+}
+
+
+// Вспомогательный метод: получить директорию, чьи дети сейчас показаны в UI
+private RPFLib.Common.Directory GetCurrentDisplayedDirectory()
+{
+    // Обычно это свойство CurrentDirectory или аналогичное в твоем mainForm
+    // Если такого нет, верни parent выделенного элемента или корень
+    var sel = filelistview.SelectedObject as RPFLib.Common.fileSystemObject;
+    if (sel == null)
+        return ((RPFLib.Version3)archiveFile).RootDirectory;
+    return sel.IsDirectory ? sel as RPFLib.Common.Directory : sel.ParentDirectory;
+}
+
+
+
+
+// ПКМ -> удалить папку (отдельная кнопка)
+private void deleteFolderToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    if (archiveFile == null)
+    {
+        MessageBox.Show("No archive is open.", "Delete folder",
+            MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+    if (!(archiveFile is Version3))
+    {
+        MessageBox.Show("Folder deletion is supported only for RPF3 archives (Midnight Club: LA).",
+            "Delete folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+
+    // Цель: ровно одна выделенная папка
+    if (filelistview.SelectedObjects.Count != 1 ||
+        !(filelistview.SelectedObject is RPFLib.Common.Directory))
+    {
+        MessageBox.Show("Select exactly one folder to delete.",
+            "Delete folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+    var dirItem = filelistview.SelectedObject as RPFLib.Common.Directory;
+
+    if (dirItem.ParentDirectory == null)
+    {
+        MessageBox.Show("Cannot delete the root directory.",
+            "Delete folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+
+    // Подсчёт содержимого для предупреждения
+    int files = 0, dirs = 0;
+    CountSubtree(dirItem, ref files, ref dirs);
+
+    DialogResult conf = MessageBox.Show(
+        string.Format("Delete folder '{0}' and ALL its contents?{1}(files: {2}, subfolders: {3})",
+            dirItem.Name, Environment.NewLine, files, dirs),
+        "Delete folder", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+    if (conf != DialogResult.Yes)
+        return;
+
+    var parent = dirItem.ParentDirectory;
+    try
+    {
+        ((Version3)archiveFile).DeleteDirectory(dirItem);
+
+        // Обновление вида
+        if (searching)
+        {
+            searching = false;
+            reset();                       // из режима поиска выходим в корень
+        }
+        else if (IsInsideOrSelf(currentDir, dirItem))
+        {
+            // Мы находились внутри удалённого поддерева: поднимаемся на родителя
+            int up = DepthOf(currentDir) - DepthOf(parent);
+            filelistview.ClearObjects();
+            buildlist(parent);
+            for (int i = 0; i < up; i++)
+                removeBreadCrumb();        // снимаем уровни хлебных крошек
+        }
+        else
+        {
+            buildlist(currentDir);         // просто освежаем текущий список
+        }
+
+        if (!this.Text.Contains("*"))
+            this.Text += "*";              // архив помечен как изменённый
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show("Failed to delete folder: " + ex.Message,
+            "Delete folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+
+// Сколько файлов/папок внутри поддерева (для текста предупреждения)
+private static void CountSubtree(RPFLib.Common.Directory dir, ref int files, ref int dirs)
+{
+    foreach (var obj in dir)
+    {
+        var sub = obj as RPFLib.Common.Directory;
+        if (sub != null) { dirs++; CountSubtree(sub, ref files, ref dirs); }
+        else files++;
+    }
+}
+
+// Глубина директории (корень = 1)
+private static int DepthOf(RPFLib.Common.Directory dir)
+{
+    int d = 0;
+    var cur = dir;
+    while (cur != null) { d++; cur = cur.ParentDirectory; }
+    return d;
+}
+
+// current находится внутри deleted (или равен ей)?
+private static bool IsInsideOrSelf(RPFLib.Common.Directory current, RPFLib.Common.Directory deleted)
+{
+    if (current == null || deleted == null) return false;
+    var d = current;
+    while (d != null)
+    {
+        if (ReferenceEquals(d, deleted)) return true;
+        d = d.ParentDirectory;
+    }
+    return false;
+}
+
+
+
     }
 }
