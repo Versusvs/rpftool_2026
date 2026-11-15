@@ -852,6 +852,12 @@ namespace RPFTool
                 ofrm.Filter = "All files (*.*)|*.*";
                 if (ofrm.ShowDialog(this) == DialogResult.OK)
                 {
+
+                    // ДОБАВИТЬ ЭТУ СТРОКУ: сброс пакетного выбора режима хранения.
+                    // Без неё static _batchCompressed переживёт операцию и все следующие
+                    // Add будут молча добавлять файлы в запомненном режиме без диалога.                   
+                    ((Version3)archiveFile).BeginAddBatch();   // сброс выбора "apply to all" с прошлой операции                    
+                    
                     int added = 0;
                     foreach (string filePath in ofrm.FileNames)
                     {
