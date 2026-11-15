@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -30,6 +30,12 @@ namespace RPFLib
             new Dictionary<string, Dictionary<byte, int>>();
         private readonly Dictionary<byte, uint> _rscFlagsByType =
             new Dictionary<byte, uint>();
+
+        // ДОБАВЛЕНО: режим хранения, выбранный пользователем для ТЕКУЩЕЙ операции
+        // добавления (чекбокс "Apply this storage mode to all files in this add
+        // operation" в единой форме). null - спрашивать для каждого файла отдельно.
+        // Сбрасывается вызовом BeginAddBatch() из mainForm перед циклом добавления.
+        private static bool? _batchCompressed = null;
 
         // Дополнительный справочник имён только для MCLA (лежит рядом с exe, только читается)
         private const string MclaNamesFile = "FilenamesMCLA.txt";
@@ -191,14 +197,11 @@ namespace RPFLib
             return data;
         }
 
-        // Замена, как и родные файлы MC:LA, пишется сжатой (кроме ресурсов).
-        // Флаг выставляется ДО упаковки - иначе байты лягут сырыми и будет "None"
+        // ИСПРАВЛЕНО: замена сохраняет режим хранения исходной записи:
+        // None остаётся None, Compressed остаётся Compressed.
+        // SetCustomData упакует данные только если флаг сжатия уже выставлен.
         private void StoreData(FileEntry entry, byte[] data)
         {
-            if (!entry.IsResourceFile)
-            {
-                entry.IsCompressed = true;
-            }
             entry.SetCustomData(data);
         }
 
@@ -309,6 +312,7 @@ namespace RPFLib
             _fileLinks.Clear();
             _rscTypeByExt.Clear();
             _rscFlagsByType.Clear();
+            _batchCompressed = null;   // ДОБАВЛЕНО: новый архив = новый пакетный режим
 
             RootDirectory = new RPFLib.Common.Directory();
             _dirLinks[RootDirectory] = _rpfFile.TOC[0] as DirectoryEntry; // корень <-> первая запись TOC
@@ -318,7 +322,6 @@ namespace RPFLib
         }
 
         #region ДОБАВЛЕНО: добавление файлов в архив
-
 
         // Удаляет папку из архива вместе со всем содержимым (рекурсивно).
         // Реальная запись на диск произойдёт при вызове Save().
@@ -383,7 +386,6 @@ namespace RPFLib
                 }
             }
         }
-
 
         // Ищет запись-директорию в TOC, соответствующую директории из GUI:
         // сначала по прямой связи в словаре, затем фолбэк по хешу имени
@@ -453,6 +455,13 @@ namespace RPFLib
             return set;
         }
 
+        // ДОБАВЛЕНО: сброс запомненного режима хранения для новой операции добавления.
+        // Вызывать из mainForm ПЕРЕД циклом добавления файлов (btn_add_Click).
+        public void BeginAddBatch()
+        {
+            _batchCompressed = null;
+        }
+
         // Создаёт новую пустую папку в указанной директории архива.
         // Реальная запись на диск произойдёт при вызове Save().
         // Возвращает GUI-объект, чтобы список можно было обновить сразу.
@@ -489,11 +498,9 @@ namespace RPFLib
             if (parentWasEmpty)
                 parentDirEntry.ContentEntryIndex = insertIndex;
 
-            // CEI новой пустой папки ставим ПОСЛЕ InsertEntry (чтобы её саму не сдвинуло)
-            newDirEntry.ContentEntryIndex = insertIndex + 1;
-
-            // ИСПРАВЛЕНО: ContentEntryIndex ставим ПОСЛЕ InsertEntry, чтобы цикл сдвига
-            // в InsertEntry его не тронул (он сдвигает записи с ContentEntryIndex >= index)
+            // CEI новой пустой папки ставим ПОСЛЕ InsertEntry: цикл сдвига внутри
+            // InsertEntry трогает записи с ContentEntryIndex >= index, поэтому
+            // выставленный до вставки CEI уехал бы на +1 и диапазон стал бы неверным
             newDirEntry.ContentEntryIndex = insertIndex + 1;
 
             // 4. Имя в словаре + персист, чтобы после переоткрытия папка не стала 0x...
@@ -522,9 +529,6 @@ namespace RPFLib
 
             return dir;
         }
-
-
-
 
         // Добавляет файл в указанную директорию архива.
         // Реальная запись на диск произойдёт при вызове Save()
@@ -560,12 +564,24 @@ namespace RPFLib
 
             if (isRsc)
             {
-                // ВСЕГДА спрашиваем пользователя: версия ресурса (ResourceType) и флаги.
-                // Диалог предзаполнен подсказками из текущего архива (мода по расширению,
-                // список встреченных типов), но решение принимает пользователь.
+                // Ресурс: версия (ResourceType) и флаги выбираются в ЕДИНОЙ форме.
+                // ResourceType по умолчанию - мода по расширению из текущего архива.
                 string ext = Path.GetExtension(fileName) ?? "";
                 byte defType; uint defFlags;
                 TryGetModeType(ext, out defType, out defFlags);
+
+                // RSCFlags по умолчанию читаем напрямую из загружаемого контейнера:
+                // flags1 (big-endian dword на offset 8) семантически дублирует поле
+                // RSCFlags TOC-записи. Маркерные биты 0xC0000000 добавляем, если в
+                // заголовке их нет. Для всех трёх magic (V1/V2/ENC) flags1 на offset 8.
+                if (data.Length >= 12)
+                {
+                    uint rawFlags = (uint)(
+                        (data[8] << 24) | (data[9] << 16) | (data[10] << 8) | data[11]);
+                    defFlags = ((rawFlags & 0xC0000000u) != 0)
+                        ? rawFlags
+                        : (rawFlags | 0xC0000000u);
+                }
 
                 byte chosenType;
                 uint chosenFlags;
@@ -573,7 +589,9 @@ namespace RPFLib
                     fileName, ext,
                     GetKnownTypesForExt(ext),
                     GetKnownTypesGlobal(),
-                    defType, defFlags))
+                    defType, defFlags,
+                    true,     // isResource: секция типа/флагов активна,
+                    false))   // режим хранения заблокирован на None (ресурсы всегда сырыми)
                 {
                     if (frm.ShowDialog() != DialogResult.OK)
                     {
@@ -605,13 +623,44 @@ namespace RPFLib
             }
             else
             {
+                // Обычный файл: ЯВНЫЙ выбор режима хранения в той же единой форме
+                // (Compressed = deflate / None = сырьё). Секция типа/флагов в форме
+                // при этом заблокирована. Если для текущей операции уже выбран режим
+                // с чекбоксом "apply to all" - используем его без повторного вопроса.
+                bool storeCompressed;
+                if (_batchCompressed.HasValue)
+                {
+                    storeCompressed = _batchCompressed.Value;
+                }
+                else
+                {
+                    string ext = Path.GetExtension(fileName) ?? "";
+                    byte defType; uint defFlags;
+                    TryGetModeType(ext, out defType, out defFlags); // для обычных файлов не используются
+                    using (var frm = new RPFTool.AddResourceForm(
+                        fileName, ext,
+                        GetKnownTypesForExt(ext),
+                        GetKnownTypesGlobal(),
+                        defType, defFlags,
+                        false,   // не ресурс: тип/флаги заблокированы,
+                        true))   // режим хранения выбирается; дефолт - Compressed
+                    {
+                        if (frm.ShowDialog() != DialogResult.OK)
+                        {
+                            return; // пользователь отменил добавление этого файла
+                        }
+                        storeCompressed = frm.ChosenCompressed;
+                        if (frm.ApplyToAll) _batchCompressed = storeCompressed;
+                    }
+                }
+
                 newEntry.IsResourceFile = false;
                 newEntry.ResourceType = 0;
                 newEntry.RSCFlags = 0;
                 newEntry.SizeInArchive = data.Length; // уточнится в save() после упаковки
 
-                // КЛЮЧЕВОЙ ПОРЯДОК: флаг ДО упаковки, иначе байты лягут сырыми ("None")
-                newEntry.IsCompressed = true;
+                // КЛЮЧЕВОЙ ПОРЯДОК: флаг ДО упаковки - SetCustomData пакует по нему
+                newEntry.IsCompressed = storeCompressed;
                 newEntry.SetCustomData(data);
             }
 
@@ -620,6 +669,7 @@ namespace RPFLib
             int insertIndex = parentDirEntry.ContentEntryIndex + parentDirEntry.ContentEntryCount;
             _rpfFile.TOC.InsertEntry(insertIndex, newEntry);
             parentDirEntry.ContentEntryCount++;
+
             // InsertEntry сдвигает CEI всех директорий с CEI >= index (включительно).
             // У пустого родителя CEI == index, и его сдвигает ложно: ребёнок лёг ровно на
             // index, поэтому диапазон обязан начинаться там же. Возвращаем CEI на место.
