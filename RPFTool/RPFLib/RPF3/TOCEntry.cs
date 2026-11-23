@@ -5,7 +5,14 @@ namespace RPFLib.RPF3
 {
     internal abstract class TOCEntry : Entry
     {
+        // ДОБАВЛЕНО: реальное имя элемента (для GUI и словаря KnownFilenames).
+        // В архиве хранится НЕ имя, а его хеш (см. NameOffset).
+        public string Name { get; set; }
+
+        // В RPF3 это поле содержит ХЕШ имени (Hasher.Hash), а не смещение в таблице строк:
+        // таблицы строк в RPF3 нет вообще.
         public int NameOffset { get; set; }
+
         public TOC TOC { get; set; }
 
         public abstract bool IsDirectory { get; }

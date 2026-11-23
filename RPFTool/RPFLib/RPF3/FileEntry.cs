@@ -30,6 +30,13 @@ namespace RPFLib.RPF3
         public byte[] CustomData { get; private set; }
         public override int newEntryIndex { get; set; }
 
+        // ДОБАВЛЕНО: мост к полю NameOffset, которое в RPF3 хранит ХЕШ имени
+        public uint NameHash
+        {
+            get { return (uint)NameOffset; }
+            set { NameOffset = (int)value; }
+        }
+
         public int getSize()
         {
             return Size;
@@ -107,8 +114,35 @@ namespace RPFLib.RPF3
 
         public override void Write(BinaryWriter bw)
         {
-            bw.Write(NameOffset);
-            bw.Write(Size);
+            // ДОБАВЛЕНО: контроль границ полей перед записью
+            if (!IsResourceFile)
+            {
+                if ((SizeInArchive & ~0x00ffffff) != 0)
+                {
+                    throw new Exception(string.Format(
+                        "File '{0}': size in archive ({1} bytes) exceeds the 24-bit limit (16777215). RPF3 cannot store it.",
+                        Name ?? ("hash 0x" + NameHash.ToString("x")), SizeInArchive));
+                }
+                if (Offset > int.MaxValue)
+                {
+                    throw new Exception(string.Format(
+                        "File '{0}': offset {1} exceeds 32-bit address space of RPF3.",
+                        Name ?? ("hash 0x" + NameHash.ToString("x")), Offset));
+                }
+            }
+            else
+            {
+                // у resource-записей младший байт поля смещения занят типом ресурса
+                if ((Offset & 0xFF) != 0)
+                {
+                    throw new Exception(string.Format(
+                        "Resource '{0}': offset must be 256-byte aligned, got {1}.",
+                        Name ?? ("hash 0x" + NameHash.ToString("x")), Offset));
+                }
+            }
+
+            bw.Write(NameOffset);   // хеш имени
+            bw.Write(Size);         // размер без сжатия
 
             if (IsResourceFile)
             {
@@ -122,7 +156,7 @@ namespace RPFLib.RPF3
                 var temp = SizeInArchive;
                 if (IsCompressed)
                 {
-                    temp |= 0x40000000;
+                    temp |= 0x40000000; // флаг deflate-сжатия в старшем байте
                 }
                 bw.Write(temp);
             }
